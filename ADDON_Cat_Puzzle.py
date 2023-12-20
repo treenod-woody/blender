@@ -106,7 +106,7 @@ class PickingMaker(bpy.types.Operator):
         # Create Picking Collider
         for obj in selObj:
             
-            if (obj.name[-10:] == '_Collision'):
+            if (obj.name.endswith('Collision')):
                 
                 newObjName = obj.name.replace("Collision", "Picking") 
                 
@@ -279,7 +279,7 @@ class CleanSetting(bpy.types.Operator):
         
         for obj in bpy.data.objects:
 
-            if (obj.name[-10:] == '_Collision') or (obj.name[-8:] == '_Picking'):
+            if (obj.name[-1] == 'Collision') or (obj.name[-1] == 'Picking'):
                 continue
             
             name = obj.name    # 오브젝트 이름
