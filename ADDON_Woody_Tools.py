@@ -1,4 +1,4 @@
-# from typing import Set
+
 bl_info = {
     "name": "Woody Tools Add-on",
     "author": "Woody",
@@ -11,6 +11,7 @@ bl_info = {
     "category": "Woody Tools",
 }
 
+from typing import Set
 import bpy
 from bpy.types import Panel, Operator
 
@@ -25,6 +26,17 @@ class OBJECT_PT_WoodyTool(Panel):
     def draw(self, context):
         layout = self.layout
 
+        # Transform
+        selected_object = bpy.context.object
+
+        # 선택한 오브젝트의 Properties 사용
+        layout.label(text="Transform :", icon="OUTLINER_DATA_EMPTY")
+        layout.prop(selected_object, "location", text="")
+        layout.prop(selected_object, "rotation_euler", text="")
+        layout.prop(selected_object, "scale", text="")
+
+        layout.separator(factor=1)
+
         # Cylinder
         layout.label(text="Cyliner :", icon= 'MESH_CYLINDER')
         row = layout.row()
@@ -35,13 +47,19 @@ class OBJECT_PT_WoodyTool(Panel):
 
         layout.separator(factor=1)
 
-        # Material & Lattice
+        # Material & Text
         row = layout.row()
         row.operator(Add_Material.bl_idname, text= Add_Material.bl_label, icon= 'NODE_MATERIAL')
-        row.operator(Add_Lattice.bl_idname, text= Add_Lattice.bl_label, icon= 'MOD_LATTICE')
-        # Text
-        row = layout.row()
         row.operator(Add_Text.bl_idname, text= Add_Text.bl_label, icon= 'OUTLINER_OB_FONT')
+
+        layout.separator(factor=1)
+
+        # Modifyers
+        layout.label(text="Modifyer :", icon= 'MODIFIER_DATA')
+        row = layout.row()
+        row.operator(Add_Lattice.bl_idname, text= Add_Lattice.bl_label, icon= 'MOD_LATTICE')
+        # Mirror 모디파이어 추가 버튼
+        row.operator(Add_Mirror_Modifier.bl_idname, text=Add_Mirror_Modifier.bl_label, icon="MOD_MIRROR")
 
 # Text Panel : 텍스트 생성 후 텍스트 Spacing 옵션 ----------------------------------------
 
@@ -73,6 +91,32 @@ class OBJECT_PT_Spacing(Panel):
         row.label(text= "Line:")
         row.prop(text, "space_line", text= "")
 
+class OBJECT_PT_Mirror_Modifier(Panel):
+    bl_label = "Mirror Axis"
+    bl_idname = "OBJECT_PT_Mirror_Modifier"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Woody"
+    bl_parentid = "OBJECT_PT_woodytool"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        selected_object = context.object
+        mirror_modifier = None
+
+        # 선택한 오브젝트의 Mirror 모디파이어
+        for modifier in selected_object.modifiers:
+            if modifier.type == 'MIRROR':
+                mirror_modifier = modifier
+                break
+
+        # Mirror Modifier가 존재하는 경우에만 UI를 그립니다.
+        if mirror_modifier:
+            # Mirror Axis 축 변경 toggle 버튼
+            layout.prop(mirror_modifier, "use_axis", toggle=True)
+        else:
+            layout.label(text="Mirror Modifier를 찾을 수 없습니다.")
 
 # Cylinder Operator -----------------------------------------------------------------------------
 
@@ -283,17 +327,35 @@ class Add_Text(Operator):
         return {'FINISHED'}
 
 
+# Mirror 모디파이어
+class Add_Mirror_Modifier(Operator):
+    bl_idname = "wm.add_mirror_modifier"
+    bl_label = "Mirror"
+
+    def execute(self, context):
+        # 선택한 오브젝트
+        selected_object = bpy.context.object
+
+        # Mirror 모디파이어 추가
+        mirror_modifier = selected_object.modifiers.new("Mirror", 'MIRROR')
+        mirror_modifier.use_axis[0] = True
+        mirror_modifier.use_axis[1] = False
+        mirror_modifier.use_axis[2] = False
+
+        return {'FINISHED'}
 
 
 classes = [
     OBJECT_PT_WoodyTool,
     OBJECT_PT_Spacing,
+    OBJECT_PT_Mirror_Modifier,
     Add_Cylinder_6,
     Add_Cylinder_8,
     Add_Cylinder_10,
     Add_Cylinder_12,
     Add_Material,
     Add_Lattice,
+    Add_Mirror_Modifier,
     Add_Text
 ]
 

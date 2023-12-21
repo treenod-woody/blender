@@ -1,37 +1,39 @@
+from typing import Set
 import bpy
+from bpy.types import Context, Panel, Operator
+from bpy.props import FloatProperty
 
-resolution = 0
+class OBJECT_PT_Woody_Tools(Panel):
+    bl_idname = "OBJECT_PT_Woody_Tools"
+    bl_label = "Woody Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Woody Tools"
 
-selObj = bpy.context.selected_objects
+    def draw(self, context):
+        layout = self.layout
+        
+        selected_object = bpy.context.object
 
-# Desellect All
-bpy.ops.object.select_all(action='DESELECT')
+        # 선택한 오브젝트의 프라퍼티를 사용
+        layout.label(text="Transform :")
+        layout.prop(selected_object, "location", text="")
+        layout.prop(selected_object, "rotation_euler", text="")
+        layout.prop(selected_object, "scale", text="")
 
-for obj in selObj:
-    
-    obj_loc = bpy.data.objects[obj.name].location
-    
-    # Create Lattice : select obj's location & Scale
-    bpy.ops.object.add(type='LATTICE', enter_editmode=False, align='WORLD', location=obj_loc, scale=(1, 1, 1))
-    curObj = bpy.context.selected_objects[0]
-    curObj.name = obj.name + "_Lattice"
-    latticeName = curObj.name
-    curObj.data.name = latticeName
-    size = obj.dimensions
-    curObj.scale = (size[0] + 0.1, size[1] + 0.1, size[2] + 0.1)
-    
-    # Lattice Resolution
-    latticeObj = bpy.context.selected_objects[0]
-    latticeObj.data.points_u = 2 + resolution
-    latticeObj.data.points_v = 2 + resolution
-    latticeObj.data.points_w = 2 + resolution
-    
-    bpy.ops.object.select_all(action='DESELECT')
-    
-    # "Lattice" Modifier & Apply "Lattice" Object
-    obj.select_set(True)
-    selObj = bpy.context.selected_objects[0]
-    selObj.modifiers.new(name='Lattice', type='LATTICE')
-    selObj.modifiers["Lattice"].object = bpy.data.objects[latticeName]
-    
-    bpy.ops.object.select_all(action='DESELECT')
+
+
+classes = [
+    OBJECT_PT_Woody_Tools
+]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
+
+if __name__ == "__main__":
+    register()
