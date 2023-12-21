@@ -1,39 +1,38 @@
-from typing import Set
 import bpy
-from bpy.types import Context, Panel, Operator
-from bpy.props import FloatProperty
+import bmesh
 
-class OBJECT_PT_Woody_Tools(Panel):
-    bl_idname = "OBJECT_PT_Woody_Tools"
-    bl_label = "Woody Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Woody Tools"
+# 현재 선택된 오브젝트 가져오기
+obj = bpy.context.object
 
-    def draw(self, context):
-        layout = self.layout
-        
-        selected_object = bpy.context.object
+# Edit 모드로 전환
+bpy.context.view_layer.objects.active = obj
+bpy.ops.object.mode_set(mode='EDIT')
 
-        # 선택한 오브젝트의 프라퍼티를 사용
-        layout.label(text="Transform :")
-        layout.prop(selected_object, "location", text="")
-        layout.prop(selected_object, "rotation_euler", text="")
-        layout.prop(selected_object, "scale", text="")
+# BMesh 생성
+bm = bmesh.from_edit_mesh(obj.data)
 
+# 0 < x < 0.01 사이의 vertex는 모두 0으로
+for vertex in bm.verts:
+    if vertex.co.x > 0 and vertex.co.x < 0.01:
+        vertex.co.x = 0
 
+# x > 0인 버텍스 모두 선택
+for vertex in bm.verts:
+    # 버텍스의 좌표를 기반으로 선택 여부 판단
+    if vertex.co.x > 0.0 :
+        vertex.select = True
+    else:
+        vertex.select = False
 
-classes = [
-    OBJECT_PT_Woody_Tools
-]
+# 선택된 버텍스 제거
+bmesh.ops.delete(
+    bm,
+    geom=[v for v in bm.verts if v.select],
+    context='VERTS'
+)
 
-def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+# BMesh 데이터를 오브젝트에 적용
+bmesh.update_edit_mesh(obj.data)
 
-def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-
-if __name__ == "__main__":
-    register()
+#Object 모드로 전환
+bpy.ops.object.mode_set(mode='OBJECT')

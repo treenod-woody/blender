@@ -13,6 +13,7 @@ bl_info = {
 
 from typing import Set
 import bpy
+import bmesh
 from bpy.types import Panel, Operator
 
 # Main Panel : 사이드바 메인 메뉴 UI 세팅
@@ -56,10 +57,12 @@ class OBJECT_PT_WoodyTool(Panel):
 
         # Modifyers
         layout.label(text="Modifyer :", icon= 'MODIFIER_DATA')
+        layout.operator(Add_Lattice.bl_idname, text= Add_Lattice.bl_label, icon= 'MOD_LATTICE')
         row = layout.row()
-        row.operator(Add_Lattice.bl_idname, text= Add_Lattice.bl_label, icon= 'MOD_LATTICE')
         # Mirror 모디파이어 추가 버튼
-        row.operator(Add_Mirror_Modifier.bl_idname, text=Add_Mirror_Modifier.bl_label, icon="MOD_MIRROR")
+        row.operator(Add_Mirror_X_Modifier.bl_idname, text=Add_Mirror_X_Modifier.bl_label, icon="MOD_MIRROR")
+        row.operator(Add_Mirror_Y_Modifier.bl_idname, text=Add_Mirror_Y_Modifier.bl_label, icon="MOD_MIRROR")
+        row.operator(Add_Mirror_Z_Modifier.bl_idname, text=Add_Mirror_Z_Modifier.bl_label, icon="MOD_MIRROR")
 
 # Text Panel : 텍스트 생성 후 텍스트 Spacing 옵션 ----------------------------------------
 
@@ -328,19 +331,152 @@ class Add_Text(Operator):
 
 
 # Mirror 모디파이어
-class Add_Mirror_Modifier(Operator):
-    bl_idname = "wm.add_mirror_modifier"
-    bl_label = "Mirror"
+class Add_Mirror_X_Modifier(Operator):
+    bl_idname = "wm.add_mirror_x_modifier"
+    bl_label = "X"
 
     def execute(self, context):
-        # 선택한 오브젝트
-        selected_object = bpy.context.object
+        # 선택한 오브젝트 가져오기
+        obj = bpy.context.object
+
+        # Edit 모드로 전환
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # BMesh 생성
+        bm = bmesh.from_edit_mesh(obj.data)
+
+        # 0 < x < 0.01 사이의 vertex는 모두 0으로
+        for vertex in bm.verts:
+            if vertex.co.x > 0 and vertex.co.x < 0.01:
+                vertex.co.x = 0
+
+        # x > 0인 버텍스 모두 선택
+        for vertex in bm.verts:
+            # 버텍스의 좌표를 기반으로 선택 여부 판단
+            if vertex.co.x > 0.0 :
+                vertex.select = True
+            else:
+                vertex.select = False
+
+        # 선택된 버텍스 제거
+        bmesh.ops.delete(
+            bm,
+            geom=[v for v in bm.verts if v.select],
+            context='VERTS'
+        )
+
+        # BMesh 데이터를 오브젝트에 적용
+        bmesh.update_edit_mesh(obj.data)
+
+        #Object 모드로 전환
+        bpy.ops.object.mode_set(mode='OBJECT')
 
         # Mirror 모디파이어 추가
-        mirror_modifier = selected_object.modifiers.new("Mirror", 'MIRROR')
+        mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
         mirror_modifier.use_axis[0] = True
         mirror_modifier.use_axis[1] = False
         mirror_modifier.use_axis[2] = False
+
+        return {'FINISHED'}
+    
+# Mirror 모디파이어
+class Add_Mirror_Y_Modifier(Operator):
+    bl_idname = "wm.add_mirror_y_modifier"
+    bl_label = "Y"
+
+    def execute(self, context):
+        # 선택한 오브젝트 가져오기
+        obj = bpy.context.object
+
+        # Edit 모드로 전환
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # BMesh 생성
+        bm = bmesh.from_edit_mesh(obj.data)
+
+        # 0 < x < 0.01 사이의 vertex는 모두 0으로
+        for vertex in bm.verts:
+            if vertex.co.y > 0 and vertex.co.y < 0.01:
+                vertex.co.y = 0
+
+        # x > 0인 버텍스 모두 선택
+        for vertex in bm.verts:
+            # 버텍스의 좌표를 기반으로 선택 여부 판단
+            if vertex.co.y > 0.0 :
+                vertex.select = True
+            else:
+                vertex.select = False
+
+        # 선택된 버텍스 제거
+        bmesh.ops.delete(
+            bm,
+            geom=[v for v in bm.verts if v.select],
+            context='VERTS'
+        )
+
+        # BMesh 데이터를 오브젝트에 적용
+        bmesh.update_edit_mesh(obj.data)
+
+        #Object 모드로 전환
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Mirror 모디파이어 추가
+        mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
+        mirror_modifier.use_axis[0] = False
+        mirror_modifier.use_axis[1] = True
+        mirror_modifier.use_axis[2] = False
+
+        return {'FINISHED'}
+
+# Mirror 모디파이어
+class Add_Mirror_Z_Modifier(Operator):
+    bl_idname = "wm.add_mirror_z_modifier"
+    bl_label = "Z"
+
+    def execute(self, context):
+        # 선택한 오브젝트 가져오기
+        obj = bpy.context.object
+
+        # Edit 모드로 전환
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # BMesh 생성
+        bm = bmesh.from_edit_mesh(obj.data)
+
+        # 0 < x < 0.01 사이의 vertex는 모두 0으로
+        for vertex in bm.verts:
+            if vertex.co.z > 0 and vertex.co.z < 0.01:
+                vertex.co.z = 0
+
+        # x > 0인 버텍스 모두 선택
+        for vertex in bm.verts:
+            # 버텍스의 좌표를 기반으로 선택 여부 판단
+            if vertex.co.z > 0.0 :
+                vertex.select = True
+            else:
+                vertex.select = False
+
+        # 선택된 버텍스 제거
+        bmesh.ops.delete(
+            bm,
+            geom=[v for v in bm.verts if v.select],
+            context='VERTS'
+        )
+
+        # BMesh 데이터를 오브젝트에 적용
+        bmesh.update_edit_mesh(obj.data)
+
+        #Object 모드로 전환
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Mirror 모디파이어 추가
+        mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
+        mirror_modifier.use_axis[0] = False
+        mirror_modifier.use_axis[1] = False
+        mirror_modifier.use_axis[2] = True
 
         return {'FINISHED'}
 
@@ -355,7 +491,9 @@ classes = [
     Add_Cylinder_12,
     Add_Material,
     Add_Lattice,
-    Add_Mirror_Modifier,
+    Add_Mirror_X_Modifier,
+    Add_Mirror_Y_Modifier,
+    Add_Mirror_Z_Modifier,
     Add_Text
 ]
 
