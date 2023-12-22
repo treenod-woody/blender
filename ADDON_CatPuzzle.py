@@ -5,13 +5,45 @@ bl_info = {
     "blender": (2, 80, 0),
     "description": "캐주얼G팀 CAT Puzzle 블럭 제작에 필요한 애드온입니다.",
     "doc_url": "https://treenod.atlassian.net/wiki/spaces/CGP/pages/71737541370/CAT",
-    "category": "Object",
+    "category": "3D View",
 }
 
 
 import bpy
 import os
 import math
+
+# 애드온 Operation 메뉴 설정
+class CatPuzzleMenu(bpy.types.Menu):
+    """CAT 블럭 제작을 위한 기능들"""
+    bl_idname = "OBJECT_MT_cat_puzzle_menu"
+    bl_label = "Cat"
+
+    def draw(self, context):
+        layout = self.layout
+        
+        layout.operator(MatchName.bl_idname, text=MatchName.bl_label) # Match Name
+        layout.operator(BlockSort.bl_idname, text=BlockSort.bl_label) # Block Sort
+        
+        layout.separator()
+        
+        layout.operator(ExportUV.bl_idname, text=ExportUV.bl_label) # Export UV
+        layout.operator(ExportOBJ.bl_idname, text=ExportOBJ.bl_label) # Export OBJ
+        layout.operator(ExportFBX.bl_idname, text=ExportFBX.bl_label) # Export FBX
+        
+        layout.separator()
+        
+        layout.operator(CollisionMaker.bl_idname, text=CollisionMaker.bl_label) # Collision Maker
+        layout.operator(PickingMaker.bl_idname, text=PickingMaker.bl_label) # Picking Maker
+        
+        layout.separator()
+        
+        layout.operator(CleanSetting.bl_idname, text=CleanSetting.bl_label) # Clean Setting
+        layout.operator(BlockRotationInfo.bl_idname, text=BlockRotationInfo.bl_label) # Block Rotation Info
+        layout.operator(MissionIconMaker.bl_idname, text=MissionIconMaker.bl_label) # Mission Icon Maker
+        
+        layout.separator()
+
 
 # 데이터 이름을 오브젝트 이름으로 변경
 class MatchName(bpy.types.Operator):
@@ -449,92 +481,7 @@ class MissionIconMaker(bpy.types.Operator):
             bpy.data.lights.remove(lit)
             
         return {'FINISHED'}
-            
-# Lattice를 선택한 오브젝트들 크기에 맞춰 한꺼번에 생성
-class LatticeMaker(bpy.types.Operator):
-    """Lattice"""
-    bl_idname = "object.lattice_maker"
-    bl_label = "Lattice Maker"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    lattice_resolution: bpy.props.IntProperty(name="Resolution", default=0, min=0, max=10)
-    
-    def execute(self, context):
-        # Lattice Resolution --------------------------
-
-        resolution = self.lattice_resolution
-
-        # ---------------------------------------------
-
-        selObj = bpy.context.selected_objects
-
-        # Desellect All
-        bpy.ops.object.select_all(action='DESELECT')
-
-        for obj in selObj:
-            
-            obj_loc = bpy.data.objects[obj.name].location
-            
-            # Create Lattice : select obj's location & Scale
-            bpy.ops.object.add(type='LATTICE', enter_editmode=False, align='WORLD', location=obj_loc, scale=(1, 1, 1))
-            curObj = bpy.context.selected_objects[0]
-            curObj.name = obj.name + "_Lattice"
-            latticeName = curObj.name
-            curObj.data.name = latticeName
-            size = obj.dimensions
-            curObj.scale = (size[0] + 0.1, size[1] + 0.1, size[2] + 0.1)
-            
-            # Lattice Resolution
-            latticeObj = bpy.context.selected_objects[0]
-            latticeObj.data.points_u = 2 + resolution
-            latticeObj.data.points_v = 2 + resolution
-            latticeObj.data.points_w = 2 + resolution
-            
-            bpy.ops.object.select_all(action='DESELECT')
-            
-            # "Lattice" Modifier & Apply "Lattice" Object
-            obj.select_set(True)
-            selObj = bpy.context.selected_objects[0]
-            selObj.modifiers.new(name='Lattice', type='LATTICE')
-            selObj.modifiers["Lattice"].object = bpy.data.objects[latticeName]
-            
-            bpy.ops.object.select_all(action='DESELECT')
-            
-        return {'FINISHED'}
-
-# 애드온 Operation 메뉴 설정
-class CatPuzzleMenu(bpy.types.Menu):
-    """CAT 블럭 제작을 위한 기능들"""
-    bl_idname = "OBJECT_MT_cat_puzzle_menu"
-    bl_label = "Cat"
-
-    def draw(self, context):
-        layout = self.layout
-        
-        layout.operator(MatchName.bl_idname, text=MatchName.bl_label) # Match Name
-        layout.operator(BlockSort.bl_idname, text=BlockSort.bl_label) # Block Sort
-        
-        layout.separator()
-        
-        layout.operator(ExportUV.bl_idname, text=ExportUV.bl_label) # Export UV
-        layout.operator(ExportOBJ.bl_idname, text=ExportOBJ.bl_label) # Export OBJ
-        layout.operator(ExportFBX.bl_idname, text=ExportFBX.bl_label) # Export FBX
-        
-        layout.separator()
-        
-        layout.operator(CollisionMaker.bl_idname, text=CollisionMaker.bl_label) # Collision Maker
-        layout.operator(PickingMaker.bl_idname, text=PickingMaker.bl_label) # Picking Maker
-        
-        layout.separator()
-        
-        layout.operator(CleanSetting.bl_idname, text=CleanSetting.bl_label) # Clean Setting
-        layout.operator(BlockRotationInfo.bl_idname, text=BlockRotationInfo.bl_label) # Block Rotation Info
-        layout.operator(MissionIconMaker.bl_idname, text=MissionIconMaker.bl_label) # Mission Icon Maker
-        
-        layout.separator()
-        
-        layout.operator(LatticeMaker.bl_idname, text=LatticeMaker.bl_label) # Lattice Maker
-
+ 
 
 
 classes = [
@@ -548,8 +495,7 @@ classes = [
     PickingMaker,
     CleanSetting,
     BlockRotationInfo,
-    MissionIconMaker,
-    LatticeMaker
+    MissionIconMaker
 ]     
 
 
