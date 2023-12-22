@@ -1,4 +1,3 @@
-
 bl_info = {
     "name": "Woody Tools Add-on",
     "author": "Woody",
