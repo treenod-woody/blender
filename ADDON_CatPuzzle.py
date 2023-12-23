@@ -9,9 +9,8 @@ bl_info = {
 }
 
 
-import bpy
-import os
-import math
+import bpy, os, math
+from bpy.props import IntProperty, FloatProperty
 
 # 애드온 Operation 메뉴 설정
 class CatPuzzleMenu(bpy.types.Menu):
@@ -22,25 +21,26 @@ class CatPuzzleMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         
-        layout.operator(MatchName.bl_idname, text=MatchName.bl_label) # Match Name
-        layout.operator(BlockSort.bl_idname, text=BlockSort.bl_label) # Block Sort
+        layout.operator(MatchName.bl_idname, text=MatchName.bl_label, icon='SORTALPHA') # Match Name
+        layout.operator(BlockSort.bl_idname, text=BlockSort.bl_label, icon="SNAP_VERTEX") # Block Sort
+        
         
         layout.separator()
         
-        layout.operator(ExportUV.bl_idname, text=ExportUV.bl_label) # Export UV
-        layout.operator(ExportOBJ.bl_idname, text=ExportOBJ.bl_label) # Export OBJ
-        layout.operator(ExportFBX.bl_idname, text=ExportFBX.bl_label) # Export FBX
+        layout.operator(ExportUV.bl_idname, text=ExportUV.bl_label, icon="TEXTURE") # Export UV
+        layout.operator(ExportOBJ.bl_idname, text=ExportOBJ.bl_label, icon='EXPORT') # Export OBJ
+        layout.operator(ExportFBX.bl_idname, text=ExportFBX.bl_label, icon='EXPORT') # Export FBX
         
         layout.separator()
         
-        layout.operator(CollisionMaker.bl_idname, text=CollisionMaker.bl_label) # Collision Maker
-        layout.operator(PickingMaker.bl_idname, text=PickingMaker.bl_label) # Picking Maker
+        layout.operator(CollisionMaker.bl_idname, text=CollisionMaker.bl_label, icon='CUBE') # Collision Maker
+        layout.operator(PickingMaker.bl_idname, text=PickingMaker.bl_label, icon='MESH_CUBE') # Picking Maker
         
         layout.separator()
         
-        layout.operator(CleanSetting.bl_idname, text=CleanSetting.bl_label) # Clean Setting
-        layout.operator(BlockRotationInfo.bl_idname, text=BlockRotationInfo.bl_label) # Block Rotation Info
-        layout.operator(MissionIconMaker.bl_idname, text=MissionIconMaker.bl_label) # Mission Icon Maker
+        layout.operator(CleanSetting.bl_idname, text=CleanSetting.bl_label, icon='BRUSH_DATA') # Clean Setting
+        layout.operator(BlockRotationInfo.bl_idname, text=BlockRotationInfo.bl_label, icon='INFO') # Block Rotation Info
+        layout.operator(MissionIconMaker.bl_idname, text=MissionIconMaker.bl_label, icon='OUTLINER_OB_CAMERA') # Mission Icon Maker
         
         layout.separator()
 
@@ -71,7 +71,7 @@ class BlockSort(bpy.types.Operator):
     bl_label = "Block sort"
     bl_options = {'REGISTER', 'UNDO'}
 
-    column: bpy.props.IntProperty(name="열 개수(min 5 ~ max 50)", default=10, min=1, max=100)
+    column: IntProperty(name="열 개수 :", default=10, min=1, max=100)
     
     def execute(self, context):
 
@@ -98,15 +98,15 @@ class CollisionMaker(bpy.types.Operator):
     bl_label = "Collision maker"
     bl_options = {'REGISTER', 'UNDO'}
     
-    scale: bpy.props.FloatProperty(name="Scale", default=0.1, min=0.01, max=0.2)
+    scale: FloatProperty(name="Scale", default=0.1, min=0.01, max=0.2)
     
     def execute(self, context):
-        selObj = bpy.context.selected_objects
+        selObjs = bpy.context.selected_objects
 
         # Desellect All
         bpy.ops.object.select_all(action='TOGGLE')
 
-        for obj in selObj:
+        for obj in selObjs:
             # Create Cube : select obj's location
             selObj_loc = bpy.data.objects[obj.name].location
             bpy.ops.mesh.primitive_cube_add(size=1.0, location=selObj_loc)
@@ -171,7 +171,7 @@ class ExportUV(bpy.types.Operator):
     bl_label = "Export UV"
     bl_options = {'REGISTER', 'UNDO'}
     
-    texure_size: bpy.props.IntProperty(name="TextureSize", default=256, min=128, max=2048)
+    texure_size: IntProperty(name="TextureSize", default=256, min=128, max=2048)
     
     # Export UV
     def execute(self, context):

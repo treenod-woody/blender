@@ -10,10 +10,25 @@ bl_info = {
     "category": "3D View",
 }
 
-from typing import Set
 import bpy
 import bmesh
-from bpy.types import Panel, Operator
+from typing import Set
+from bpy.types import Context, Panel, Operator
+from bpy.props import StringProperty, FloatProperty, BoolProperty
+
+# 머티리얼 체크 & 생성 & 리턴 (중복 방지)
+def check_material_exist(material_name):
+    if material_name in bpy.data.materials:
+        material = bpy.data.materials[material_name]
+        bpy.data.materials.remove(material)
+
+    material = bpy.data.materials.new(material_name)
+    material.use_nodes = True
+    bsdf = material.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs[12].default_value = 0    # Specular = '0'
+
+    return material
+
 
 # Main Panel : 사이드바 메인 메뉴 UI 세팅
 class OBJECT_PT_WoodyTool(Panel):
@@ -38,7 +53,7 @@ class OBJECT_PT_WoodyTool(Panel):
         layout.separator(factor=1)
 
     # Cylinder
-        layout.label(text="Cyliner :", icon= 'MESH_CYLINDER')
+        layout.label(text="Cyliner :", icon='MESH_CYLINDER')
         row = layout.row()
         row.operator(Add_Cylinder_6.bl_idname, text= Add_Cylinder_6.bl_label) # 버튼 : 8각형
         row.operator(Add_Cylinder_8.bl_idname, text= Add_Cylinder_8.bl_label) # 버튼 : 8각형
@@ -51,12 +66,18 @@ class OBJECT_PT_WoodyTool(Panel):
         layout.label(text="Shader :", icon='SHADING_RENDERED')
         row = layout.row()
         row.operator(Add_Material.bl_idname, text= Add_Material.bl_label)
-        row.operator(SHADER_OT_TwoSideTex.bl_idname, text= SHADER_OT_TwoSideTex.bl_label)
+        row.operator(SHADER_OP_TwoSideTex.bl_idname, text= SHADER_OP_TwoSideTex.bl_label)
         
         row = layout.row()
-        row.operator(SHADER_OT_Blend2Tex.bl_idname, text= SHADER_OT_Blend2Tex.bl_label)
-        row.operator(SHADER_OT_Blend3Tex.bl_idname, text= SHADER_OT_Blend3Tex.bl_label)
-        row.operator(SHADER_OT_Blend4Tex.bl_idname, text= SHADER_OT_Blend4Tex.bl_label)
+        row.operator(SHADER_OP_Blend2Tex.bl_idname, text= SHADER_OP_Blend2Tex.bl_label)
+        row.operator(SHADER_OP_Blend3Tex.bl_idname, text= SHADER_OP_Blend3Tex.bl_label)
+        row.operator(SHADER_OP_Blend4Tex.bl_idname, text= SHADER_OP_Blend4Tex.bl_label)
+
+        layout.separator(factor=1)
+
+    # Palette
+        layout.label(text="Palette :", icon='GROUP_VCOL')
+        layout.operator(PALETTE_OP_RGB.bl_idname, text= PALETTE_OP_RGB.bl_label)
 
         layout.separator(factor=1)
 
@@ -182,60 +203,33 @@ class Add_Material(Operator):
 
     def execute(self, context):
 
-        selObjs = bpy.context.selected_objects
-        matList = bpy.data.materials
+        # 선택한 오브젝트의 머티리얼 슬롯을 모두 제거
+        obj = bpy.context.object
+        obj.data.materials.clear()
 
-        # material_name 존재여부 체크 : True / False
-        def check_material_exist(material_name):
-            material = bpy.data.materials[obj.name]
-            bpy.data.materials.remove(material)
-
-        for obj in selObjs:
-            name = obj.name
-
-            obj.data.materials.clear()
-
-            # 존재 여부 체크 후 머티리얼 할당
-            if check_material_exist(name):
-                mat = bpy.data.materials[name]
-                bsdf = mat.node_tree.nodes["Principled BSDF"]
-                bsdf.inputs[12].default_value = 0    # Specular = '0'
-                obj.data.materials.append(mat)
-            else: 
-                mat = bpy.data.materials.new(name)
-                mat.use_nodes = True
-                bsdf = mat.node_tree.nodes["Principled BSDF"]
-                bsdf.inputs[12].default_value = 0    # Specular = '0'
-                obj.data.materials.append(mat)
+        # 존재 여부 체크 후 머티리얼 할당
+        mat = check_material_exist(obj.name)
+        obj.data.materials.append(mat)
 
         return {'FINISHED'}
 
-class SHADER_OT_Blend2Tex(Operator):
+class SHADER_OP_Blend2Tex(Operator):
     bl_label = "2Tex"
     bl_idname = 'shader.blend2tex_operator'
 
     def execute(self, context):
 
-        # material_name 존재여부 체크 : True / False
-        def check_material_exist(material_name):
-            return material_name in bpy.data.materials
-
         # 선택한 오브젝트의 머티리얼 슬롯을 모두 제거
         obj = bpy.context.object
         obj.data.materials.clear()
 
-        material = None
-
-        # 존재 여부 체크 후 머티리얼 할당
-        if check_material_exist(obj.name):
-            material = bpy.data.materials[obj.name]
-            bpy.data.materials.remove(material)
-
-        material = bpy.data.materials.new(name=obj.name)
-        material.use_nodes = True
+        # 머티리얼 노드 트리 기본
+        material = check_material_exist(obj.name)
         node_tree = material.node_tree
         nodes = node_tree.nodes
         nodes.remove(nodes.get('Principled BSDF'))
+
+    # 노드 리스트
 
         # Material Output 노드
         node_output = nodes.get('Material Output')
@@ -244,6 +238,7 @@ class SHADER_OT_Blend2Tex(Operator):
         # Texture Coordinate 노드
         node_TexCoord = nodes.new(type='ShaderNodeTexCoord')
         node_TexCoord.location = (-600, 0)
+        node_TexCoord.object = obj
 
         # Mapping 노드 1
         node_Mapping_1 = nodes.new(type='ShaderNodeMapping')
@@ -279,23 +274,22 @@ class SHADER_OT_Blend2Tex(Operator):
         node_MixShader = nodes.new(type='ShaderNodeMixShader')
         node_MixShader.location = (730, 0)
 
-        # Attribute 노드
-        node_Attribute = nodes.new(type='ShaderNodeAttribute')
-        node_Attribute.location = (230, 500)
-        node_Attribute.attribute_name = "Col"
+        # VertexColor 노드
+        node_VertexColor = nodes.new(type='ShaderNodeVertexColor')
+        node_VertexColor.location = (230, 500)
 
 
         # Node link
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_1.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_2.inputs[0])
-        node_tree.links.new(node_Mapping_1.outputs[0], node_TexImage_1.inputs[0])
-        node_tree.links.new(node_Mapping_2.outputs[0], node_TexImage_2.inputs[0])
-        node_tree.links.new(node_TexImage_1.outputs[0], node_BSDF_1.inputs[0])
-        node_tree.links.new(node_TexImage_2.outputs[0], node_BSDF_2.inputs[0])
-        node_tree.links.new(node_Attribute.outputs[0], node_MixShader.inputs[0])
-        node_tree.links.new(node_BSDF_1.outputs[0], node_MixShader.inputs[1])
-        node_tree.links.new(node_BSDF_2.outputs[0], node_MixShader.inputs[2])
-        node_tree.links.new(node_MixShader.outputs[0], node_output.inputs[0])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_1.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_2.inputs['Vector'])
+        node_tree.links.new(node_Mapping_1.outputs['Vector'], node_TexImage_1.inputs['Vector'])
+        node_tree.links.new(node_Mapping_2.outputs['Vector'], node_TexImage_2.inputs['Vector'])
+        node_tree.links.new(node_TexImage_1.outputs['Color'], node_BSDF_1.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_2.outputs['Color'], node_BSDF_2.inputs['Base Color'])
+        node_tree.links.new(node_VertexColor.outputs['Color'], node_MixShader.inputs['Fac'])
+        node_tree.links.new(node_BSDF_1.outputs['BSDF'], node_MixShader.inputs[1])
+        node_tree.links.new(node_BSDF_2.outputs['BSDF'], node_MixShader.inputs[2])
+        node_tree.links.new(node_MixShader.outputs[0], node_output.inputs['Surface'])
 
         # 머티리얼 할당
         obj.data.materials.append(material)
@@ -303,29 +297,18 @@ class SHADER_OT_Blend2Tex(Operator):
         return {'FINISHED'}
 
 
-class SHADER_OT_Blend3Tex(Operator):
+class SHADER_OP_Blend3Tex(Operator):
     bl_label = "3Tex"
     bl_idname = 'shader.blend3tex_operator'
 
     def execute(self, context):
 
-        # material_name 존재여부 체크 : True / False
-        def check_material_exist(material_name):
-            return material_name in bpy.data.materials
-
         # 선택한 오브젝트의 머티리얼 슬롯을 모두 제거
         obj = bpy.context.object
         obj.data.materials.clear()
 
-        material = None
-
-        # 존재 여부 체크 후 머티리얼 할당
-        if check_material_exist(obj.name):
-            material = bpy.data.materials[obj.name]
-            bpy.data.materials.remove(material)
-
-        material = bpy.data.materials.new(name=obj.name)
-        material.use_nodes = True
+        # 머티리얼 노드 트리 기본
+        material = check_material_exist(obj.name)
         node_tree = material.node_tree
         nodes = node_tree.nodes
         nodes.remove(nodes.get('Principled BSDF'))
@@ -337,6 +320,7 @@ class SHADER_OT_Blend3Tex(Operator):
         # Texture Coordinate 노드
         node_TexCoord = nodes.new(type='ShaderNodeTexCoord')
         node_TexCoord.location = (-600, 0)
+        node_TexCoord.object = obj
 
         # Mapping 노드 1
         node_Mapping_1 = nodes.new(type='ShaderNodeMapping')
@@ -392,8 +376,8 @@ class SHADER_OT_Blend3Tex(Operator):
         node_MixShader_2.location = (1230, -250)
 
         # Color Attribute 노드
-        node_ColorAttribute = nodes.new(type='ShaderNodeVertexColor')
-        node_ColorAttribute.location = (0, 500)
+        node_VertexColor = nodes.new(type='ShaderNodeVertexColor')
+        node_VertexColor.location = (0, 500)
 
         # Separate Color 노드
         node_SeparateColor = nodes.new(type='ShaderNodeSeparateColor')
@@ -401,23 +385,23 @@ class SHADER_OT_Blend3Tex(Operator):
 
 
         # Node link
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_1.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_2.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_3.inputs[0])
-        node_tree.links.new(node_Mapping_1.outputs[0], node_TexImage_1.inputs[0])
-        node_tree.links.new(node_Mapping_2.outputs[0], node_TexImage_2.inputs[0])
-        node_tree.links.new(node_Mapping_3.outputs[0], node_TexImage_3.inputs[0])
-        node_tree.links.new(node_TexImage_1.outputs[0], node_BSDF_1.inputs[0])
-        node_tree.links.new(node_TexImage_2.outputs[0], node_BSDF_2.inputs[0])
-        node_tree.links.new(node_TexImage_3.outputs[0], node_BSDF_3.inputs[0])
-        node_tree.links.new(node_ColorAttribute.outputs[0], node_SeparateColor.inputs[0])
-        node_tree.links.new(node_SeparateColor.outputs[0], node_MixShader_1.inputs[0])
-        node_tree.links.new(node_SeparateColor.outputs[1], node_MixShader_2.inputs[0])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_1.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_2.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_3.inputs['Vector'])
+        node_tree.links.new(node_Mapping_1.outputs['Vector'], node_TexImage_1.inputs['Vector'])
+        node_tree.links.new(node_Mapping_2.outputs['Vector'], node_TexImage_2.inputs['Vector'])
+        node_tree.links.new(node_Mapping_3.outputs['Vector'], node_TexImage_3.inputs['Vector'])
+        node_tree.links.new(node_TexImage_1.outputs['Color'], node_BSDF_1.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_2.outputs['Color'], node_BSDF_2.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_3.outputs['Color'], node_BSDF_3.inputs['Base Color'])
+        node_tree.links.new(node_VertexColor.outputs['Color'], node_SeparateColor.inputs['Color'])
+        node_tree.links.new(node_SeparateColor.outputs['Red'], node_MixShader_1.inputs['Fac'])
+        node_tree.links.new(node_SeparateColor.outputs['Green'], node_MixShader_2.inputs['Fac'])
         node_tree.links.new(node_BSDF_1.outputs[0], node_MixShader_1.inputs[1])
         node_tree.links.new(node_BSDF_2.outputs[0], node_MixShader_1.inputs[2])
         node_tree.links.new(node_BSDF_3.outputs[0], node_MixShader_2.inputs[2])
         node_tree.links.new(node_MixShader_1.outputs[0], node_MixShader_2.inputs[1])
-        node_tree.links.new(node_MixShader_2.outputs[0], node_output.inputs[0])
+        node_tree.links.new(node_MixShader_2.outputs[0], node_output.inputs['Surface'])
 
         # 머티리얼 할당
         obj.data.materials.append(material)
@@ -425,29 +409,18 @@ class SHADER_OT_Blend3Tex(Operator):
         return {'FINISHED'}
 
 
-class SHADER_OT_Blend4Tex(Operator):
+class SHADER_OP_Blend4Tex(Operator):
     bl_label = "4Tex"
     bl_idname = 'shader.blend4tex_operator'
 
     def execute(self, context):
 
-        # material_name 존재여부 체크 : True / False
-        def check_material_exist(material_name):
-            return material_name in bpy.data.materials
-
         # 선택한 오브젝트의 머티리얼 슬롯을 모두 제거
         obj = bpy.context.object
         obj.data.materials.clear()
 
-        material = None
-
-        # 존재 여부 체크 후 머티리얼 할당
-        if check_material_exist(obj.name):
-            material = bpy.data.materials[obj.name]
-            bpy.data.materials.remove(material)
-
-        material = bpy.data.materials.new(name=obj.name)
-        material.use_nodes = True
+        # 머티리얼 노드 트리 기본
+        material = check_material_exist(obj.name)
         node_tree = material.node_tree
         nodes = node_tree.nodes
         nodes.remove(nodes.get('Principled BSDF'))
@@ -459,6 +432,7 @@ class SHADER_OT_Blend4Tex(Operator):
         # Texture Coordinate 노드
         node_TexCoord = nodes.new(type='ShaderNodeTexCoord')
         node_TexCoord.location = (-600, 0)
+        node_TexCoord.object = obj
 
         # Mapping 노드 1
         node_Mapping_1 = nodes.new(type='ShaderNodeMapping')
@@ -533,8 +507,8 @@ class SHADER_OT_Blend4Tex(Operator):
         node_MixShader_3.location = (1730, -500)
 
         # Color Attribute 노드
-        node_ColorAttribute = nodes.new(type='ShaderNodeVertexColor')
-        node_ColorAttribute.location = (0, 500)
+        node_VertexColor = nodes.new(type='ShaderNodeVertexColor')
+        node_VertexColor.location = (0, 500)
 
         # Separate Color 노드
         node_SeparateColor = nodes.new(type='ShaderNodeSeparateColor')
@@ -542,29 +516,29 @@ class SHADER_OT_Blend4Tex(Operator):
 
 
         # Node link
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_1.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_2.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_3.inputs[0])
-        node_tree.links.new(node_TexCoord.outputs[2], node_Mapping_4.inputs[0])
-        node_tree.links.new(node_Mapping_1.outputs[0], node_TexImage_1.inputs[0])
-        node_tree.links.new(node_Mapping_2.outputs[0], node_TexImage_2.inputs[0])
-        node_tree.links.new(node_Mapping_3.outputs[0], node_TexImage_3.inputs[0])
-        node_tree.links.new(node_Mapping_4.outputs[0], node_TexImage_4.inputs[0])
-        node_tree.links.new(node_TexImage_1.outputs[0], node_BSDF_1.inputs[0])
-        node_tree.links.new(node_TexImage_2.outputs[0], node_BSDF_2.inputs[0])
-        node_tree.links.new(node_TexImage_3.outputs[0], node_BSDF_3.inputs[0])
-        node_tree.links.new(node_TexImage_4.outputs[0], node_BSDF_4.inputs[0])
-        node_tree.links.new(node_ColorAttribute.outputs[0], node_SeparateColor.inputs[0])
-        node_tree.links.new(node_SeparateColor.outputs[0], node_MixShader_1.inputs[0])
-        node_tree.links.new(node_SeparateColor.outputs[1], node_MixShader_2.inputs[0])
-        node_tree.links.new(node_SeparateColor.outputs[2], node_MixShader_3.inputs[0])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_1.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_2.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_3.inputs['Vector'])
+        node_tree.links.new(node_TexCoord.outputs['UV'], node_Mapping_4.inputs['Vector'])
+        node_tree.links.new(node_Mapping_1.outputs['Vector'], node_TexImage_1.inputs['Vector'])
+        node_tree.links.new(node_Mapping_2.outputs['Vector'], node_TexImage_2.inputs['Vector'])
+        node_tree.links.new(node_Mapping_3.outputs['Vector'], node_TexImage_3.inputs['Vector'])
+        node_tree.links.new(node_Mapping_4.outputs['Vector'], node_TexImage_4.inputs['Vector'])
+        node_tree.links.new(node_TexImage_1.outputs['Color'], node_BSDF_1.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_2.outputs['Color'], node_BSDF_2.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_3.outputs['Color'], node_BSDF_3.inputs['Base Color'])
+        node_tree.links.new(node_TexImage_4.outputs['Color'], node_BSDF_4.inputs['Base Color'])
+        node_tree.links.new(node_VertexColor.outputs['Color'], node_SeparateColor.inputs['Color'])
+        node_tree.links.new(node_SeparateColor.outputs['Red'], node_MixShader_1.inputs['Fac'])
+        node_tree.links.new(node_SeparateColor.outputs['Green'], node_MixShader_2.inputs['Fac'])
+        node_tree.links.new(node_SeparateColor.outputs['Blue'], node_MixShader_3.inputs['Fac'])
         node_tree.links.new(node_BSDF_1.outputs[0], node_MixShader_1.inputs[1])
         node_tree.links.new(node_BSDF_2.outputs[0], node_MixShader_1.inputs[2])
         node_tree.links.new(node_BSDF_3.outputs[0], node_MixShader_2.inputs[2])
         node_tree.links.new(node_BSDF_4.outputs[0], node_MixShader_3.inputs[2])
         node_tree.links.new(node_MixShader_1.outputs[0], node_MixShader_2.inputs[1])
         node_tree.links.new(node_MixShader_2.outputs[0], node_MixShader_3.inputs[1])
-        node_tree.links.new(node_MixShader_3.outputs[0], node_output.inputs[0])
+        node_tree.links.new(node_MixShader_3.outputs[0], node_output.inputs['Surface'])
 
         # 머티리얼 할당
         obj.data.materials.append(material)
@@ -572,32 +546,19 @@ class SHADER_OT_Blend4Tex(Operator):
         return {'FINISHED'}
 
 
-class SHADER_OT_TwoSideTex(Operator):
+class SHADER_OP_TwoSideTex(Operator):
     bl_label = "TwoSideTex"
     bl_idname = 'shader.twosidetex_operator'
 
     def execute(self, context):
 
-        # material_name 존재여부 체크 : True / False
-        def check_material_exist(material_name):
-            return material_name in bpy.data.materials
-
         # 선택한 오브젝트의 머티리얼 슬롯을 모두 제거
         obj = bpy.context.object
         obj.data.materials.clear()
 
-        material = None
-
-        # 존재 여부 체크 후 동일한 이름의 머티리얼이 있다면 제거
-        if check_material_exist(obj.name):
-            material = bpy.data.materials[obj.name]
-            bpy.data.materials.remove(material)
-
-        # 신규 머티리얼 생성 후 노드 활성화
-        material = bpy.data.materials.new(name=obj.name)
-        material.use_nodes = True
-        
-        # 머티리얼의 모든 노드 리스트를 받아와서 'Prinscipled BSDF' 노드만 제거
+        # 머티리얼 노드 트리 기본
+        material = check_material_exist(obj.name)
+        material.blend_method = 'CLIP'
         node_tree = material.node_tree
         nodes = node_tree.nodes
         nodes.remove(nodes.get('Principled BSDF'))
@@ -644,7 +605,7 @@ class SHADER_OT_TwoSideTex(Operator):
         group_out.location = (1000, 0)
 
     # Group Input / Output 소켓 추가 ===================================
-        group.interface.new_socket(name="Fornt Image", in_out='INPUT', socket_type='NodeSocketColor')
+        group.interface.new_socket(name="Face Image", in_out='INPUT', socket_type='NodeSocketColor')
         group.interface.new_socket(name="Face Tint", in_out='INPUT', socket_type='NodeSocketColor')
         group.interface.new_socket(name="Face Alpha", in_out='INPUT', socket_type='NodeSocketFloat')
         group.interface.new_socket(name="Back Image", in_out='INPUT', socket_type='NodeSocketColor')
@@ -656,15 +617,17 @@ class SHADER_OT_TwoSideTex(Operator):
         node_group.inputs.get('Face Tint').default_value = (1.0, 1.0, 1.0, 1.0)
         node_group.inputs.get('Back Tint').default_value = (1.0, 1.0, 1.0, 1.0)
 
-        # Math 노드 1
-        node_Math_1 = group.nodes.new(type='ShaderNodeMath')
-        node_Math_1.location = (-250, 200)
-        node_Math_1.operation = 'MULTIPLY'
+        # Mix Color 노드 1
+        node_MixColor_1 = group.nodes.new(type='ShaderNodeMix')
+        node_MixColor_1.location = (-250, 200)
+        node_MixColor_1.data_type = 'RGBA'
+        node_MixColor_1.blend_type = 'MULTIPLY'
 
         # Mix Color 노드 2
-        node_Math_2 = group.nodes.new(type='ShaderNodeMath')
-        node_Math_2.location = (-250, -200)
-        node_Math_2.operation = 'MULTIPLY'
+        node_MixColor_2 = group.nodes.new(type='ShaderNodeMix')
+        node_MixColor_2.location = (-250, -200)
+        node_MixColor_2.data_type = 'RGBA'
+        node_MixColor_2.blend_type = 'MULTIPLY'
 
         # Principled BSDF 노드 1
         node_BSDF_1 = group.nodes.new(type='ShaderNodeBsdfPrincipled')
@@ -684,34 +647,59 @@ class SHADER_OT_TwoSideTex(Operator):
         node_Geometry = group.nodes.new(type='ShaderNodeNewGeometry')
         node_Geometry.location = (0, 90)
 
-        # 노드 링크
-        group.links.new(group_in.outputs[0], node_Math_1.inputs[0]) # image 1
-        group.links.new(group_in.outputs[1], node_Math_1.inputs[1]) # Tint 1
-        group.links.new(group_in.outputs[2], node_BSDF_1.inputs[4]) # Alpha 1
+    # 노드 링크 ===============================================================================
+        group.links.new(group_in.outputs['Face Image'], node_MixColor_1.inputs['A'])
+        group.links.new(group_in.outputs['Face Tint'], node_MixColor_1.inputs['B'])
+        group.links.new(group_in.outputs['Face Alpha'], node_BSDF_1.inputs['Alpha'])
 
-        group.links.new(group_in.outputs[3], node_Math_2.inputs[0]) # image 2
-        group.links.new(group_in.outputs[4], node_Math_2.inputs[1]) # Tint 2
-        group.links.new(group_in.outputs[5], node_BSDF_2.inputs[4]) # Alpha 2
+        group.links.new(group_in.outputs['Back Image'], node_MixColor_2.inputs['A'])
+        group.links.new(group_in.outputs['Back Tint'], node_MixColor_2.inputs['B'])
+        group.links.new(group_in.outputs['Back Alpha'], node_BSDF_2.inputs['Alpha'])
 
-        group.links.new(node_Math_1.outputs[0], node_BSDF_1.inputs[0])
-        group.links.new(node_Math_2.outputs[0], node_BSDF_2.inputs[0])
-        group.links.new(node_Geometry.outputs[6], node_MixShader.inputs[0])
-        group.links.new(node_BSDF_1.outputs[0], node_MixShader.inputs[1])
-        group.links.new(node_BSDF_2.outputs[0], node_MixShader.inputs[2])
-        group.links.new(node_MixShader.outputs[0], group_out.inputs[0])
+        group.links.new(node_MixColor_1.outputs['Result'], node_BSDF_1.inputs['Base Color'])  # BSDF 1
+        group.links.new(node_MixColor_2.outputs['Result'], node_BSDF_2.inputs['Base Color'])  # BSDF 2
+        group.links.new(node_Geometry.outputs['Backfacing'], node_MixShader.inputs['Fac']) # Geometry
+        group.links.new(node_BSDF_1.outputs['BSDF'], node_MixShader.inputs[1])   # Mix Shader
+        group.links.new(node_BSDF_2.outputs['BSDF'], node_MixShader.inputs[2])   # Mix Shader
+        group.links.new(node_MixShader.outputs[0], group_out.inputs[0])     # Group Output
 
         # Material Output 노드에 Node Group 적용
-        material.node_tree.links.new(node_TexImage_1.outputs[0], node_group.inputs[0]) # Image 1
-        material.node_tree.links.new(node_TexImage_1.outputs[1], node_group.inputs[2]) # Alpha 1
-        material.node_tree.links.new(node_TexImage_2.outputs[0], node_group.inputs[3]) # Image 2
-        material.node_tree.links.new(node_TexImage_2.outputs[0], node_group.inputs[5]) # Alpha 2
-        material.node_tree.links.new(node_group.outputs[0], material_output.inputs[0])
+        material.node_tree.links.new(node_TexImage_1.outputs['Color'], node_group.inputs['Face Image']) # Image 1
+        material.node_tree.links.new(node_TexImage_1.outputs['Alpha'], node_group.inputs['Face Alpha']) # Alpha 1
+        material.node_tree.links.new(node_TexImage_2.outputs['Color'], node_group.inputs['Back Image']) # Image 2
+        material.node_tree.links.new(node_TexImage_2.outputs['Alpha'], node_group.inputs['Back Alpha']) # Alpha 2
+        material.node_tree.links.new(node_group.outputs[0], material_output.inputs[0]) # Material Output
 
         # 머티리얼 할당
         obj.data.materials.append(material)
 
         return {'FINISHED'}
 
+
+class PALETTE_OP_RGB(Operator):
+    bl_label = "RGB palette"
+    bl_idname = 'palette.rgb_operator'
+
+    def execute(self, context):
+
+        palette_name = "RGB Palette"
+
+        for palette in bpy.data.palettes:
+            if palette.name == palette_name:
+                bpy.data.palettes.remove(palette)
+
+        # 신규 팔레트 생성 및 컬러 등록
+        palette = bpy.data.palettes.new(palette_name)
+        palette.colors.new().color = (1.0, 0.0, 0.0) # R
+        palette.colors.new().color = (0.0, 1.0, 0.0) # G
+        palette.colors.new().color = (0.0, 0.0, 1.0) # B
+        palette.colors.new().color = (0.0, 0.0, 0.0) # Black
+        palette.colors.new().color = (1.0, 1.0, 1.0) # White
+
+        # 객체의 모드를 'VERTEX_PAINT'로 변경합니다.
+        bpy.ops.object.mode_set(mode='VERTEX_PAINT')
+        
+        return {'FINISHED'}
 
 # Add Lattice --------------------------------------------------------------------
 
@@ -775,12 +763,12 @@ class Add_Text(Operator):
     bl_idname = "wm.add_text"
     bl_options = {'REGISTER', 'UNDO'}
     
-    text : bpy.props.StringProperty(name="Enter Text", default="")
-    scale : bpy.props.FloatProperty(name= "Scale", default= 1)
-    rotation : bpy.props.BoolProperty(name= "Z up", default= False)
-    center : bpy.props.BoolProperty(name= "Center Origin", default= False)
-    extrude : bpy.props.BoolProperty(name= "Extrude", default= False)
-    extrude_amount : bpy.props.FloatProperty(name= "Extrude Amount", default= 0.06)
+    text : StringProperty(name="Enter Text", default="")
+    scale : FloatProperty(name= "Scale", default= 1)
+    rotation : BoolProperty(name= "Z up", default= False)
+    center : BoolProperty(name= "Center Origin", default= False)
+    extrude : BoolProperty(name= "Extrude", default= False)
+    extrude_amount : FloatProperty(name= "Extrude Amount", default= 0.06)
     
     def invoke(self, context, event):
         wm = context.window_manager
@@ -888,6 +876,13 @@ class Add_Mirror_X_Modifier(Operator):
         #Object 모드로 전환
         bpy.ops.object.mode_set(mode='OBJECT')
 
+        # 모디파이어 리스트
+        modifiers = obj.modifiers
+
+        for modifier in modifiers:
+            if modifier.type == 'MIRROR':
+                modifiers.remove(modifier)
+
         # Mirror 모디파이어 추가
         mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
         mirror_modifier.use_axis[0] = True
@@ -938,10 +933,17 @@ class Add_Mirror_Y_Modifier(Operator):
         #Object 모드로 전환
         bpy.ops.object.mode_set(mode='OBJECT')
 
+        # 모디파이어 리스트
+        modifiers = obj.modifiers
+
+        for modifier in modifiers:
+            if modifier.type == 'MIRROR':
+                modifiers.remove(modifier)
+
         # Mirror 모디파이어 추가
         mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
-        mirror_modifier.use_axis[0] = False
-        mirror_modifier.use_axis[1] = True
+        mirror_modifier.use_axis[0] = True
+        mirror_modifier.use_axis[1] = False
         mirror_modifier.use_axis[2] = False
 
         return {'FINISHED'}
@@ -988,11 +990,18 @@ class Add_Mirror_Z_Modifier(Operator):
         #Object 모드로 전환
         bpy.ops.object.mode_set(mode='OBJECT')
 
+        # 모디파이어 리스트
+        modifiers = obj.modifiers
+
+        for modifier in modifiers:
+            if modifier.type == 'MIRROR':
+                modifiers.remove(modifier)
+
         # Mirror 모디파이어 추가
         mirror_modifier = obj.modifiers.new("Mirror", 'MIRROR')
-        mirror_modifier.use_axis[0] = False
+        mirror_modifier.use_axis[0] = True
         mirror_modifier.use_axis[1] = False
-        mirror_modifier.use_axis[2] = True
+        mirror_modifier.use_axis[2] = False
 
         return {'FINISHED'}
 
@@ -1006,10 +1015,11 @@ classes = [
     Add_Cylinder_10,
     Add_Cylinder_12,
     Add_Material,
-    SHADER_OT_Blend2Tex,
-    SHADER_OT_Blend3Tex,
-    SHADER_OT_Blend4Tex,
-    SHADER_OT_TwoSideTex,
+    SHADER_OP_Blend2Tex,
+    SHADER_OP_Blend3Tex,
+    SHADER_OP_Blend4Tex,
+    SHADER_OP_TwoSideTex,
+    PALETTE_OP_RGB,
     Add_Lattice,
     Add_Mirror_X_Modifier,
     Add_Mirror_Y_Modifier,
