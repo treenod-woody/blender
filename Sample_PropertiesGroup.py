@@ -11,5 +11,6 @@ class MyProperties(PropertyGroup):
         description="sample text",
         items=[('OP1', "Add Cube", ""),
                ('OP2', "Add Sphere", ""),
-               ('OP3', "Add Suzanne", "")]
+               ('OP3', "Add Suzanne", "")],
+        default='OP1'
     )
