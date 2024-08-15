@@ -1,3 +1,5 @@
+# MissionIcon Maker 수정
+
 bl_info = {
     "name": "CatPuzzle",
     "author": "Woody",
@@ -85,20 +87,31 @@ class BlockSort(bpy.types.Operator):
     column: IntProperty(name="열 개수 :", default=10, min=1, max=100) # type: ignore
     
     def execute(self, context):
-            # 정렬 시작 포인트
+        # 정렬 시작 포인트
         xPos, yPos, zPos = 0.5, 0.5, 0.5
 
         objs = context.selected_objects
-        objs.sort(key = lambda o: o.name)
+        
+        # 정렬 키 함수 정의
+        def sort_key(obj):
+            name = obj.name
+            parts = name.split('_')
+            base_name = parts[0]
+            has_underscore = '_' in name
+            suffix = parts[1] if has_underscore else 'zzzz'  # '_'가 없으면 가장 뒤로
+            return (base_name, suffix, name)
 
-        for obj in objs:
+        objs.sort(key=sort_key)
+
+        for i, obj in enumerate(objs):
             obj.location = (xPos, yPos, zPos)
-            if xPos < (self.column - 1):
-                xPos += 1.0
-            elif xPos > (self.column - 1):
+            
+            # 다음 위치 계산
+            xPos += 1.0
+            if (i + 1) % self.column == 0:  # 열 개수에 도달하면 다음 행으로
                 xPos = 0.5
                 yPos -= 1.0
-                zPos -= 1.0
+                zPos -= 1.0  # z축 이동
 
         return {'FINISHED'}
 
@@ -459,16 +472,6 @@ class MissionIconMaker(bpy.types.Operator):
         cam_location = (0, -8.2668, 0)
         cam_rotation = (90, 0, 0)
 
-        # LightA 변수
-        lit_A_name = "LightA"
-        lit_A_location = (0, -5.59733, -3.39775)
-        lit_A_rotation = (121.58, 0, 0)
-
-        # LightB 변수
-        lit_B_name = "LightB"
-        lit_B_location = (0, 0, 8.65)
-        lit_B_rotation = (2.9658, 0, 0)
-
         # 씬에 카메라 추가(location & rotation setting)
         def add_camera_to_scene(name, location, rotation):
             bpy.ops.object.camera_add(location=location)
@@ -479,22 +482,18 @@ class MissionIconMaker(bpy.types.Operator):
             camera.data.type = 'ORTHO'
             camera.data.ortho_scale = 1.0
 
-        # 씬에 Area타입의 조명 추가
-        def add_area_light_to_scene(name, location, rotation):
-            bpy.ops.object.light_add(type='AREA', location=(location))
-            light = bpy.context.object
-            light.name = name
-            light.data.energy = 1256.6
-            light.data.shape = 'ELLIPSE'
-            light.data.size = 20.3
-            light.data.size_y = 12.7
-            light.rotation_euler = [math.radians(rotation[0]), math.radians(rotation[1]), math.radians(rotation[2])]
 
-
-        # 카메라와 라이트 생성
+        # 카메라와 생성
         add_camera_to_scene(cam_name, cam_location, cam_rotation)
-        add_area_light_to_scene(lit_A_name, lit_A_location, lit_A_rotation)
-        add_area_light_to_scene(lit_B_name, lit_B_location, lit_B_rotation)
+
+        # 3D 뷰포트 영역 활성화
+        area = next(area for area in bpy.context.screen.areas if area.type == 'VIEW_3D')
+        area.spaces[0].region_3d.view_perspective = 'CAMERA'
+
+        # 오버레이 숨기기
+        for space in area.spaces:
+            if space.type == 'VIEW_3D':
+                space.overlay.show_overlays = False
 
 
         # -------------- mission icon make ----------------
@@ -502,9 +501,9 @@ class MissionIconMaker(bpy.types.Operator):
 
         objList = []
 
-        # except 'Camera' and 'Light' in objList
+        # except 'Camera' in objList
         for obj in bpy.data.objects:
-            if (obj.name == cam_name) or (obj.name == lit_A_name) or (obj.name == lit_B_name):
+            if (obj.name == cam_name):
                 print("Camera or Light")
             else :
                 objList.append(obj)
@@ -516,7 +515,7 @@ class MissionIconMaker(bpy.types.Operator):
             obj.location = (0, 0, 0)
             bpy.context.scene.render.filepath = export_dir + obj.name + '_Icon.png'
             bpy.context.scene.render.image_settings.file_format = 'PNG'
-            bpy.ops.render.render(write_still=True)
+            bpy.ops.render.opengl(write_still=True)
             obj.location = (10, 0, 0)
             
 
@@ -536,16 +535,11 @@ class MissionIconMaker(bpy.types.Operator):
                 yPos -= 1.0
                 zPos -= 1.0
 
-        # 카메라와 라이트 제거
+        # 카메라 제거
         for cam in bpy.data.cameras:
             bpy.data.cameras.remove(cam)
             
-        for lit in bpy.data.lights:
-            bpy.data.lights.remove(lit)
-            
         return {'FINISHED'}
- 
-
 
 classes = [
     CatPuzzleMenu, 

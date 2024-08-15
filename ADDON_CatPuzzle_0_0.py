@@ -71,7 +71,7 @@ class BlockSort(bpy.types.Operator):
     bl_label = "Block sort"
     bl_options = {'REGISTER', 'UNDO'}
 
-    column: IntProperty(name="열 개수 :", default=10, min=1, max=100)
+    column: IntProperty(name="열 개수 :", default=10, min=1, max=100) # type: ignore
     
     def execute(self, context):
 
@@ -98,7 +98,7 @@ class CollisionMaker(bpy.types.Operator):
     bl_label = "Collision maker"
     bl_options = {'REGISTER', 'UNDO'}
     
-    scale: FloatProperty(name="Scale", default=0.1, min=0.01, max=0.2)
+    scale: FloatProperty(name="Scale", default=0.1, min=0.01, max=0.2) # type: ignore
     
     def execute(self, context):
         selObjs = bpy.context.selected_objects
@@ -171,7 +171,7 @@ class ExportUV(bpy.types.Operator):
     bl_label = "Export UV"
     bl_options = {'REGISTER', 'UNDO'}
     
-    texure_size: IntProperty(name="TextureSize", default=256, min=128, max=2048)
+    texure_size: IntProperty(name="TextureSize", default=256, min=128, max=2048) # type: ignore
     
     # Export UV
     def execute(self, context):

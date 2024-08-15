@@ -28,14 +28,14 @@ class ExportData(Operator, ExportHelper):
         default="*.txt",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
+    ) # type: ignore
 
     # TXT파일에 입력될 정보
     use_setting: BoolProperty(
         name="Example Boolean",
         description="Example Tooltip",
         default=True,
-    )
+    ) # type: ignore
 
     type: EnumProperty(
         name="Example Enum",
@@ -45,7 +45,7 @@ class ExportData(Operator, ExportHelper):
             ('OPT_B', "Second Option", "Description two"),
         ),
         default='OPT_A',
-    )
+    ) # type: ignore
 
     def execute(self, context):
         return write_some_data(context, self.filepath, self.use_setting)

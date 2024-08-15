@@ -51,14 +51,14 @@ class OBJECT_PT_WoodyTool(Panel):
         selected_object = bpy.context.object
 
         # 선택한 오브젝트의 Properties 사용
-        layout.label(text="Transform :", icon="OUTLINER_DATA_EMPTY")
-        layout.prop(selected_object, "location", text="")
-        layout.prop(selected_object, "rotation_euler", text="")
-        layout.prop(selected_object, "scale", text="")
+        # layout.label(text="Transform :", icon="OUTLINER_DATA_EMPTY")
+        # layout.prop(selected_object, "location", text="")
+        # layout.prop(selected_object, "rotation_euler", text="")
+        # layout.prop(selected_object, "scale", text="")
 
-        layout.separator(factor=1)
+        # layout.separator(factor=1)
 
-    # Cylinder
+        # Cylinder
         layout.label(text="Cyliner :", icon='MESH_CYLINDER')
         row = layout.row()
         row.operator(Add_Cylinder_6.bl_idname, text= Add_Cylinder_6.bl_label) # 버튼 : 8각형
@@ -68,11 +68,11 @@ class OBJECT_PT_WoodyTool(Panel):
 
         layout.separator(factor=1)
 
-    # Circle Array Button
+        # Circle Array Button
         
 
 
-    # Material Shader
+        # Material Shader
         layout.label(text="Shader :", icon='SHADING_RENDERED')
         row = layout.row()
         row.operator(Add_Material.bl_idname, text= Add_Material.bl_label)
@@ -85,13 +85,13 @@ class OBJECT_PT_WoodyTool(Panel):
 
         layout.separator(factor=1)
 
-    # Palette
+        # Palette
         layout.label(text="Palette :", icon='GROUP_VCOL')
         layout.operator(PALETTE_OP_RGB.bl_idname, text= PALETTE_OP_RGB.bl_label)
 
         layout.separator(factor=1)
 
-    # Modifyers
+        # Modifyers
         layout.label(text="Modifier :", icon= 'MODIFIER_DATA')
 
         row = layout.row()
@@ -107,7 +107,7 @@ class OBJECT_PT_WoodyTool(Panel):
 
         layout.separator(factor=1)
 
-    # Text Add
+        # Text Add
         layout.label(text="Text :", icon = 'OUTLINER_OB_FONT')
         layout.operator(Add_Text.bl_idname, text= Add_Text.bl_label)
 

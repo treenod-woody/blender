@@ -42,56 +42,56 @@ class OBJECT_PT_WoodyTool(Panel):
     bl_idname = "OBJECT_PT_woodytool"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Woody"
+    bl_category = "Item"
     
     def draw(self, context):
         layout = self.layout
 
-        # Transform
-        selected_object = bpy.context.object
+    # Transform
+        # selected_object = bpy.context.object
 
         # 선택한 오브젝트의 Properties 사용
-        layout.label(text="Transform :", icon="OUTLINER_DATA_EMPTY")
-        layout.prop(selected_object, "location", text="")
-        layout.prop(selected_object, "rotation_euler", text="")
-        layout.prop(selected_object, "scale", text="")
+        # layout.label(text="Transform :", icon="OUTLINER_DATA_EMPTY")
+        # layout.prop(selected_object, "location", text="")
+        # layout.prop(selected_object, "rotation_euler", text="")
+        # layout.prop(selected_object, "scale", text="")
 
-        layout.separator(factor=1)
+        # layout.separator(factor=1)
 
     # Cylinder
-        layout.label(text="Cyliner :", icon='MESH_CYLINDER')
-        row = layout.row()
-        row.operator(Add_Cylinder_6.bl_idname, text= Add_Cylinder_6.bl_label) # 버튼 : 8각형
-        row.operator(Add_Cylinder_8.bl_idname, text= Add_Cylinder_8.bl_label) # 버튼 : 8각형
-        row.operator(Add_Cylinder_10.bl_idname, text= Add_Cylinder_10.bl_label) # 버튼 : 10각형
-        row.operator(Add_Cylinder_12.bl_idname, text= Add_Cylinder_12.bl_label) # 버튼 : 12각형
+        # layout.label(text="Cyliner :", icon='MESH_CYLINDER')
+        # row = layout.row()
+        # row.operator(Add_Cylinder_6.bl_idname, text= Add_Cylinder_6.bl_label) # 버튼 : 8각형
+        # row.operator(Add_Cylinder_8.bl_idname, text= Add_Cylinder_8.bl_label) # 버튼 : 8각형
+        # row.operator(Add_Cylinder_10.bl_idname, text= Add_Cylinder_10.bl_label) # 버튼 : 10각형
+        # row.operator(Add_Cylinder_12.bl_idname, text= Add_Cylinder_12.bl_label) # 버튼 : 12각형
 
-        layout.separator(factor=1)
+        # layout.separator(factor=1)
 
-    # Circle Array Button
+        # Circle Array Button
         
 
 
-    # Material Shader
+        # Material Shader
         layout.label(text="Shader :", icon='SHADING_RENDERED')
         row = layout.row()
         row.operator(Add_Material.bl_idname, text= Add_Material.bl_label)
         row.operator(SHADER_OP_TwoSideTex.bl_idname, text= SHADER_OP_TwoSideTex.bl_label)
         
-        row = layout.row()
-        row.operator(SHADER_OP_Blend2Tex.bl_idname, text= SHADER_OP_Blend2Tex.bl_label)
-        row.operator(SHADER_OP_Blend3Tex.bl_idname, text= SHADER_OP_Blend3Tex.bl_label)
-        row.operator(SHADER_OP_Blend4Tex.bl_idname, text= SHADER_OP_Blend4Tex.bl_label)
+        # row = layout.row()
+        # row.operator(SHADER_OP_Blend2Tex.bl_idname, text= SHADER_OP_Blend2Tex.bl_label)
+        # row.operator(SHADER_OP_Blend3Tex.bl_idname, text= SHADER_OP_Blend3Tex.bl_label)
+        # row.operator(SHADER_OP_Blend4Tex.bl_idname, text= SHADER_OP_Blend4Tex.bl_label)
 
         layout.separator(factor=1)
 
     # Palette
-        layout.label(text="Palette :", icon='GROUP_VCOL')
-        layout.operator(PALETTE_OP_RGB.bl_idname, text= PALETTE_OP_RGB.bl_label)
+        # layout.label(text="Palette :", icon='GROUP_VCOL')
+        # layout.operator(PALETTE_OP_RGB.bl_idname, text= PALETTE_OP_RGB.bl_label)
 
-        layout.separator(factor=1)
+        # layout.separator(factor=1)
 
-    # Modifyers
+        # Modifyers
         layout.label(text="Modifier :", icon= 'MODIFIER_DATA')
 
         row = layout.row()
@@ -107,9 +107,9 @@ class OBJECT_PT_WoodyTool(Panel):
 
         layout.separator(factor=1)
 
-    # Text Add
-        layout.label(text="Text :", icon = 'OUTLINER_OB_FONT')
-        layout.operator(Add_Text.bl_idname, text= Add_Text.bl_label)
+        # Text Add
+        # layout.label(text="Text :", icon = 'OUTLINER_OB_FONT')
+        # layout.operator(Add_Text.bl_idname, text= Add_Text.bl_label)
 
 
 # Text Panel : 텍스트 생성 후 텍스트 Spacing 옵션 ----------------------------------------
@@ -147,7 +147,7 @@ class OBJECT_PT_Mirror_Modifier(Panel):
     bl_idname = "OBJECT_PT_Mirror_Modifier"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Woody"
+    bl_category = "Item"
     bl_parentid = "OBJECT_PT_woodytool"
     bl_options = {"DEFAULT_CLOSED"}
 
@@ -1068,24 +1068,24 @@ class Add_Mirror_Z_Modifier(Operator):
 
 classes = [
     OBJECT_PT_WoodyTool,
-    OBJECT_PT_Spacing,
-    OBJECT_PT_Mirror_Modifier,
-    Add_Cylinder_6,
-    Add_Cylinder_8,
-    Add_Cylinder_10,
-    Add_Cylinder_12,
+    # OBJECT_PT_Spacing,
+    # OBJECT_PT_Mirror_Modifier,
+    # Add_Cylinder_6,
+    # Add_Cylinder_8,
+    # Add_Cylinder_10,
+    # Add_Cylinder_12,
     CircleArray,
     Add_Material,
     SHADER_OP_Blend2Tex,
     SHADER_OP_Blend3Tex,
     SHADER_OP_Blend4Tex,
     SHADER_OP_TwoSideTex,
-    PALETTE_OP_RGB,
+    # PALETTE_OP_RGB,
     Add_Lattice,
     Add_Mirror_X_Modifier,
     Add_Mirror_Y_Modifier,
     Add_Mirror_Z_Modifier,
-    Add_Text
+    # Add_Text
 ]
 
 def register():

@@ -33,8 +33,8 @@ class AddCube(bpy.types.Operator):
     bl_label = "Add Cube"
     bl_idname = "wm.add_cube"
 
-    text: bpy.props.StringProperty(name= "Name", default= "Cube")
-    scale: bpy.props.FloatProperty(name= "Scale", default= 1)
+    text: bpy.props.StringProperty(name= "Name", default= "Cube") # type: ignore
+    scale: bpy.props.FloatProperty(name= "Scale", default= 1) # type: ignore
     origin: bpy.props.EnumProperty(
         name= "",
         description= "",
@@ -43,7 +43,7 @@ class AddCube(bpy.types.Operator):
             ('OP2', "Center", "Origin to Center")
         ],
         default= 'OP2'
-    )
+    ) # type: ignore
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -100,10 +100,10 @@ class AddCylinder(bpy.types.Operator):
     bl_label = "Add Cylinder"
     bl_idname = "wm.add_cylinder"
 
-    text: bpy.props.StringProperty(name= "Name", default= "Cylinder")
-    radius: bpy.props.FloatProperty(name= "Radius", default= 1)
-    depth: bpy.props.FloatProperty(name= "Depth", default= 2)
-    scale: bpy.props.FloatProperty(name= "Scale", default= 0.5)
+    text: bpy.props.StringProperty(name= "Name", default= "Cylinder") # type: ignore
+    radius: bpy.props.FloatProperty(name= "Radius", default= 1) # type: ignore
+    depth: bpy.props.FloatProperty(name= "Depth", default= 2) # type: ignore
+    scale: bpy.props.FloatProperty(name= "Scale", default= 0.5) # type: ignore
     
     vertices: bpy.props.EnumProperty(
         name= "",
@@ -115,7 +115,7 @@ class AddCylinder(bpy.types.Operator):
             ('OP4', "12", "12각형"),
         ],
         default= 'OP2'
-    )
+    ) # type: ignore
 
     def invoke(self, context, event):
         wm = context.window_manager
